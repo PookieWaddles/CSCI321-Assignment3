@@ -1,0 +1,236 @@
+import SwiftUI
+
+// ===============================
+// MARK: - Models
+// ===============================
+
+struct Game: Identifiable {
+    let id: UUID
+    var title: String
+    var platform: String
+    var trophyStats: TrophyStats
+    var isPlatinumEarned: Bool
+    var notes: String? = nil
+    var releaseDate: Date
+    var completionStatus: CompletionStatus
+    
+    var totalTrophiesEarned: Int {
+        trophyStats.bronze + trophyStats.silver + trophyStats.gold + trophyStats.platinum
+    }
+}
+
+struct TrophyStats {
+    var bronze: Int
+    var silver: Int
+    var gold: Int
+    var platinum: Int
+}
+
+enum CompletionStatus {
+    case notStarted, inProgress, completed, platinum, custom(Double)
+}
+
+// ===============================
+// MARK: - Sample Data
+// ===============================
+
+extension Game {
+    static let sampleData: [Game] = [
+        Game(id: UUID(), title: "Spider-Man 2", platform: "PS5",
+             trophyStats: TrophyStats(bronze: 30, silver: 15, gold: 5, platinum: 1),
+             isPlatinumEarned: true, notes: "One of my favorite platinums!",
+             releaseDate: Date(), completionStatus: .platinum),
+        
+        Game(id: UUID(), title: "Elden Ring", platform: "PS5",
+             trophyStats: TrophyStats(bronze: 25, silver: 10, gold: 5, platinum: 0),
+             isPlatinumEarned: false, notes: "Very challenging!",
+             releaseDate: Date(), completionStatus: .inProgress)
+    ]
+}
+
+// ===============================
+// MARK: - Components
+// ===============================
+
+struct GameRowView: View {
+    let game: Game
+    
+    var body: some View {
+        HStack {
+            Image(systemName: game.isPlatinumEarned ? "trophy.fill" : "trophy")
+                .foregroundStyle(.yellow)
+                .font(.title2)
+            
+            VStack(alignment: .leading) {
+                Text(game.title)
+                    .font(.headline)
+                
+                Text(game.platform)
+                    .font(.subheadline)
+                    .foregroundStyle(.gray)
+            }
+            
+            Spacer()
+            
+            Text("\(game.totalTrophiesEarned)")
+                .font(.caption)
+                .padding(6)
+                .background(Color.blue.opacity(0.2))
+                .clipShape(Circle())
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+// ===============================
+// MARK: - List Screen
+// ===============================
+
+struct ListView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 15) {
+                ForEach(Game.sampleData) { game in
+                    GameRowView(game: game)
+                }
+            }
+            .padding()
+        }
+    }
+}
+
+// ===============================
+// MARK: - Detail Screen
+// ===============================
+
+struct DetailView: View {
+    let game = Game.sampleData[0]
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                
+                Image(systemName: "gamecontroller.fill")
+                    .resizable()
+                    .frame(width: 100, height: 100)
+                    .foregroundStyle(.blue)
+                
+                Text(game.title)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                
+                Text(game.platform)
+                    .foregroundStyle(.gray)
+                
+                GroupBox("Trophy Stats") {
+                    VStack(alignment: .leading) {
+                        Text("Bronze: \(game.trophyStats.bronze)")
+                        Text("Silver: \(game.trophyStats.silver)")
+                        Text("Gold: \(game.trophyStats.gold)")
+                        Text("Platinum: \(game.trophyStats.platinum)")
+                    }
+                }
+                
+                if let notes = game.notes {
+                    GroupBox("Notes") {
+                        Text(notes)
+                    }
+                }
+            }
+            .padding()
+        }
+    }
+}
+
+// ===============================
+// MARK: - Form Screen
+// ===============================
+
+struct FormView: View {
+    @State private var title = ""
+    @State private var platform = "PS5"
+    @State private var isCompleted = false
+    @State private var progress = 50.0
+    @State private var releaseDate = Date()
+    
+    var body: some View {
+        Form {
+            Section(header: Text("Game Info")) {
+                TextField("Game Title", text: $title)
+                
+                Picker("Platform", selection: $platform) {
+                    Text("PS5").tag("PS5")
+                    Text("PS4").tag("PS4")
+                }
+                
+                Toggle("Completed", isOn: $isCompleted)
+                
+                Slider(value: $progress, in: 0...100)
+                
+                DatePicker("Release Date", selection: $releaseDate)
+            }
+            
+            Section {
+                Button("Save") {}
+                Button("Cancel") {}
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+// ===============================
+// MARK: - Additional Screen
+// ===============================
+
+struct ProfileView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "person.circle.fill")
+                .resizable()
+                .frame(width: 100, height: 100)
+                .foregroundStyle(.blue)
+            
+            Text("Player Profile")
+                .font(.title)
+            
+            Text("Games Completed: 12")
+            Text("Platinums Earned: 8")
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+// ===============================
+// MARK: - Main View
+// ===============================
+
+struct ContentView: View {
+    var body: some View {
+        TabView {
+            ListView()
+                .tabItem { Label("Games", systemImage: "list.bullet") }
+            
+            DetailView()
+                .tabItem { Label("Details", systemImage: "doc.text") }
+            
+            FormView()
+                .tabItem { Label("Add", systemImage: "plus") }
+            
+            ProfileView()
+                .tabItem { Label("Profile", systemImage: "person") }
+        }
+    }
+}
+
+// ===============================
+// MARK: - Preview
+// ===============================
+
+#Preview {
+    ContentView()
+}
